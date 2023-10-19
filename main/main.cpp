@@ -24,40 +24,45 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "driver/uart.h"
+
 GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display(WatchyDisplay(DISPLAY_CS, DISPLAY_DC, DISPLAY_RES, DISPLAY_BUSY));
 
-void buttonWatch(void *pvParameters) {
-    printf("run");
-    for (;;) {
-        if (digitalRead(BOTTOM_LEFT) == HIGH) {
-            printf("Bottom Left pressed!");
-            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(BOTTOM_RIGHT) == HIGH) {
-            printf("Bottom Right pressed!");
-            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(TOP_LEFT) == HIGH) {
-            printf("Top Left pressed!");
-            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(TOP_RIGHT) == HIGH) {
-            printf("Top Right pressed!");
-            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
+#define STOPWATCH_RUNNING 1
+#define STOPWATCH_STOPPED 2
+BaseType_t stopwatch_state=STOPWATCH_STOPPED;
+BaseType_t stopwatch_counter=0;
+
+void vStopwatchDisplay(void *pvParameters) {
+    while(1){
+        display.fillScreen(GxEPD_WHITE);
+        display.setCursor(0, 90);
+        display.println(stopwatch_counter);
+        display.display(true);
+    }
+}
+
+void vStopwatchInput(void *pvParameters) {
+    while(1){
+        if (digitalRead(TOP_LEFT) == HIGH) {
+            //TODO Start/Stop the stopwatch
+            vTaskDelay(1000);
         }
+        if (digitalRead(TOP_RIGHT) == HIGH) {
+            //TODO Reset the stopwatch
+            vTaskDelay(1000);
+        }
+        vTaskDelay(100);
+    }
+}
+
+void vStopwatchTimer(void *pvParameters) {
+    //TODO Handle the stopwatch timer ticks
+}
+
+void UARTTask(void *pvParameters) {
+    while(1){
+        //TODO
     }
 }
 
@@ -79,8 +84,8 @@ void setup() {
     display.print("Hello\nWorld!");
     display.display(false);
 
-    /* Only priorities from 1-25 possible. */
-    xTaskCreate(buttonWatch, "watch", 4096, NULL, 1, NULL);
+    /* Only priorities from 1-25 possible. Tasks must be created in desending priority order*/
+    xTaskCreate(UARTTask, "uart", 4096, NULL, 1, NULL);
 
     /* Start the scheduler to start the tasks executing. */
     vTaskStartScheduler();
