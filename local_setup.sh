@@ -4,8 +4,8 @@ thispath=$(realpath .)
 
 cp CMakeLists.txt.local CMakeLists.txt
 
-mkdir ~/esp
-cd ~/esp
+mkdir esp
+cd esp
 git clone --depth 1 --branch v4.4.5 --recursive https://github.com/espressif/esp-idf.git 
 
 mkdir watchy
@@ -25,15 +25,15 @@ git clone --depth 1 --branch v1.4.7 https://github.com/sqfmi/Watchy.git
 git clone --depth 1 --branch v2.0.16-rc.2 https://github.com/tzapu/WiFiManager.git
 
 cd $thispath
-cp cmakelists/Arduino_JSON.cmake ~/esp/watchy/Arduino_JSON/CMakeLists.txt
-cp cmakelists/DS3232RTC.cmake ~/esp/watchy/DS3232RTC/CMakeLists.txt
-cp cmakelists/GxEPD2.cmake ~/esp/watchy/GxEPD2/CMakeLists.txt
-cp cmakelists/NTPClient.cmake ~/esp/watchy/NTPClient/CMakeLists.txt
-cp cmakelists/Rtc_Pcf8563.cmake ~/esp/watchy/Rtc_Pcf8563/CMakeLists.txt
-cp cmakelists/Time.cmake ~/esp/watchy/Time/CMakeLists.txt
-cp cmakelists/Watchy.cmake ~/esp/watchy/Watchy/CMakeLists.txt
+cp cmakelists/Arduino_JSON.cmake esp/watchy/Arduino_JSON/CMakeLists.txt
+cp cmakelists/DS3232RTC.cmake esp/watchy/DS3232RTC/CMakeLists.txt
+cp cmakelists/GxEPD2.cmake esp/watchy/GxEPD2/CMakeLists.txt
+cp cmakelists/NTPClient.cmake esp/watchy/NTPClient/CMakeLists.txt
+cp cmakelists/Rtc_Pcf8563.cmake esp/watchy/Rtc_Pcf8563/CMakeLists.txt
+cp cmakelists/Time.cmake esp/watchy/Time/CMakeLists.txt
+cp cmakelists/Watchy.cmake esp/watchy/Watchy/CMakeLists.txt
 
-cd ~/esp/watchy/Watchy/src
+cd esp/watchy/Watchy/src
 sed -i '12s/.*/#endif/' config.h && sed -i '48s/.*//' config.h
 
 cd ../../..
@@ -41,6 +41,3 @@ cd esp-idf
 chmod +x install.sh
 ./install.sh 
 . ./export.sh
-echo "" >> ~/.bashrc
-echo "alias get_idf='. ~/esp/esp-idf/export.sh'" >> ~/.bashrc
-echo "get_idf" >> ~/.bashrc
