@@ -2,17 +2,15 @@
 
 thispath=$(realpath .)
 
-cp CMakeLists.txt.local CMakeLists.txt
-
 mkdir esp
 cd esp
-git clone --depth 1 --branch v4.4.5 --recursive https://github.com/espressif/esp-idf.git 
+git clone --depth 1 --branch v5.1.4 --recursive https://github.com/espressif/esp-idf.git 
 
 mkdir watchy
 cd watchy
 git clone --depth 1 --branch 1.14.2 https://github.com/adafruit/Adafruit_BusIO.git
 git clone --depth 1 --branch 1.11.7 https://github.com/adafruit/Adafruit-GFX-Library.git
-git clone --depth 1 --branch 2.0.10 https://github.com/espressif/arduino-esp32.git arduino && \
+git clone --depth 1 --branch 3.0.0-rc3 https://github.com/espressif/arduino-esp32.git arduino && \
     cd arduino && \
     git submodule update --init --recursive && cd ..
 git clone --depth 1 --branch 0.2.0 https://github.com/arduino-libraries/Arduino_JSON.git
@@ -25,19 +23,28 @@ git clone --depth 1 --branch v1.4.7 https://github.com/sqfmi/Watchy.git
 git clone --depth 1 --branch v2.0.16-rc.2 https://github.com/tzapu/WiFiManager.git
 
 cd $thispath
-cp cmakelists/Arduino_JSON.cmake esp/watchy/Arduino_JSON/CMakeLists.txt
-cp cmakelists/DS3232RTC.cmake esp/watchy/DS3232RTC/CMakeLists.txt
-cp cmakelists/GxEPD2.cmake esp/watchy/GxEPD2/CMakeLists.txt
-cp cmakelists/NTPClient.cmake esp/watchy/NTPClient/CMakeLists.txt
-cp cmakelists/Rtc_Pcf8563.cmake esp/watchy/Rtc_Pcf8563/CMakeLists.txt
-cp cmakelists/Time.cmake esp/watchy/Time/CMakeLists.txt
-cp cmakelists/Watchy.cmake esp/watchy/Watchy/CMakeLists.txt
+cp patches/Arduino_JSON.cmake esp/watchy/Arduino_JSON/CMakeLists.txt
+cp patches/DS3232RTC.cmake esp/watchy/DS3232RTC/CMakeLists.txt
+cp patches/GxEPD2.cmake esp/watchy/GxEPD2/CMakeLists.txt
+cp patches/NTPClient.cmake esp/watchy/NTPClient/CMakeLists.txt
+cp patches/Rtc_Pcf8563.cmake esp/watchy/Rtc_Pcf8563/CMakeLists.txt
+cp patches/Time.cmake esp/watchy/Time/CMakeLists.txt
+cp patches/Watchy.cmake esp/watchy/Watchy/CMakeLists.txt
 
-cd esp/watchy/Watchy/src
-sed -i '12s/.*/#endif/' config.h && sed -i '48s/.*//' config.h
+cp patches/espidf-patch.diff esp/esp-idf/
+cp patches/watchy-patch.diff esp/watchy/Watchy/
+cp patches/wifimanager-patch.diff esp/watchy/WiFiManager/
 
-cd ../../..
-cd esp-idf
+cd $thispath/esp/esp-idf/
+git apply espidf-patch.diff
+
+cd $thispath/esp/watchy/Watchy/
+git apply watchy-patch.diff
+
+cd $thispath/esp/watchy/WiFiManager/
+git apply wifimanager-patch.diff
+
+cd $thispath/esp/esp-idf/
 chmod +x install.sh
 ./install.sh 
 . ./export.sh

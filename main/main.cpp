@@ -1,12 +1,11 @@
 #include <Arduino.h>
-#include <Arduino_JSON.h>
-#include <Fonts/FreeMonoBold12pt7b.h>
-#include <Fonts/FreeMonoBold18pt7b.h>
+#include <Display.h>
 #include <Fonts/FreeMonoBold24pt7b.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
 #include <GxEPD2_BW.h>
-
-#include "Display.h"
+#include <esp_log.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <stdio.h>
 
 #define BOTTOM_LEFT 26
 #define TOP_LEFT 25
@@ -17,52 +16,16 @@
 #define DISPLAY_DC 10
 #define DISPLAY_BUSY 19
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display(WatchyDisplay(DISPLAY_CS, DISPLAY_DC, DISPLAY_RES, DISPLAY_BUSY));
 
-void buttonWatch(void *pvParameters) {
-    printf("run");
-    for (;;) {
-        if (digitalRead(BOTTOM_LEFT) == HIGH) {
-            printf("Bottom Left pressed!");
-            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(BOTTOM_RIGHT) == HIGH) {
-            printf("Bottom Right pressed!");
-            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(TOP_LEFT) == HIGH) {
-            printf("Top Left pressed!");
-            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        } else if (digitalRead(TOP_RIGHT) == HIGH) {
-            printf("Top Right pressed!");
-            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_BLACK);
-            display.display(true);
-            vTaskDelay(500);
-            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_WHITE);
-            display.display(true);
-        }
-    }
-}
+void initDisplay(void* pvParameters) {
+    ESP_LOGI("initDisplay", "initializing display");
 
-void setup() {
-    /* Setting button pins to be inputs, always necessary at the start. */
+    /* Setting gpio pin types, always necessary at the start. */
+    pinMode(DISPLAY_CS, OUTPUT);
+    pinMode(DISPLAY_RES, OUTPUT);
+    pinMode(DISPLAY_DC, OUTPUT);
+    pinMode(DISPLAY_BUSY, OUTPUT);
     pinMode(BOTTOM_LEFT, INPUT);
     pinMode(BOTTOM_RIGHT, INPUT);
     pinMode(TOP_LEFT, INPUT);
@@ -79,20 +42,63 @@ void setup() {
     display.print("Hello\nWorld!");
     display.display(false);
 
-    /* Only priorities from 1-25 possible. */
-    xTaskCreate(buttonWatch, "watch", 4096, NULL, 1, NULL);
-
-    /* Start the scheduler to start the tasks executing. */
-    vTaskStartScheduler();
-
-    /* The following line should never be reached because vTaskStartScheduler()
-    will only return if there was not enough FreeRTOS heap memory available to
-    create the Idle and (if configured) Timer tasks.  Heap management, and
-    techniques for trapping heap exhaustion, are described in the book text. */
-    for (;;)
-        ;
-    return;
+    /* Delete the display initialization task. */
+    ESP_LOGI("initDisplay", "finished display initialization");
+    vTaskDelete(NULL);
 }
 
-void loop() {
+void buttonWatch(void* pvParameters) {
+    unsigned int refresh = 0;
+    for (;;) {
+        if (digitalRead(BOTTOM_LEFT) == HIGH) {
+            ESP_LOGI("buttonWatch", "Bottom Left pressed!");
+            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_BLACK);
+            display.display(true);
+            vTaskDelay(500);
+            display.fillRoundRect(0, 150, 50, 50, 20, GxEPD_WHITE);
+            display.display(true);
+            refresh++;
+        } else if (digitalRead(BOTTOM_RIGHT) == HIGH) {
+            ESP_LOGI("buttonWatch", "Bottom Right pressed!");
+            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_BLACK);
+            display.display(true);
+            vTaskDelay(500);
+            display.fillRoundRect(150, 150, 50, 50, 20, GxEPD_WHITE);
+            display.display(true);
+            refresh++;
+        } else if (digitalRead(TOP_LEFT) == HIGH) {
+            ESP_LOGI("buttonWatch", "Top Left pressed!");
+            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_BLACK);
+            display.display(true);
+            vTaskDelay(500);
+            display.fillRoundRect(0, 0, 50, 50, 20, GxEPD_WHITE);
+            display.display(true);
+            refresh++;
+        } else if (digitalRead(TOP_RIGHT) == HIGH) {
+            ESP_LOGI("buttonWatch", "Top Right pressed!");
+            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_BLACK);
+            display.display(true);
+            vTaskDelay(500);
+            display.fillRoundRect(150, 0, 50, 50, 20, GxEPD_WHITE);
+            display.display(true);
+            refresh++;
+        } else if (refresh >= 10) {
+            ESP_LOGI("buttonWatch", "Performing full refresh of display");
+            display.display(false);
+            refresh = 0;
+        }
+    }
+}
+
+extern "C" void app_main() {
+    /* Only priorities from 1-25 (configMAX_PRIORITIES) possible. */
+    /* Initialize the display first. */
+    xTaskCreate(initDisplay, "initDisplay", 4096, NULL, configMAX_PRIORITIES, NULL);
+    xTaskCreate(buttonWatch, "watch", 8192, NULL, 1, NULL);
+
+    ESP_LOGI("app_main", "Starting scheduler from app_main()");
+    vTaskStartScheduler();
+    /* vTaskStartScheduler is blocking - this should never be reached */
+    ESP_LOGE("app_main", "insufficient RAM! aborting");
+    abort();
 }
