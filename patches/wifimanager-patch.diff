@@ -1,8 +1,8 @@
 diff --git a/WiFiManager.cpp b/WiFiManager.cpp
-index 5723305..a6ca32d 100644
+index ca2f1da..1781d2f 100644
 --- a/WiFiManager.cpp
 +++ b/WiFiManager.cpp
-@@ -3326,7 +3326,7 @@ void WiFiManager::DEBUG_WM(wm_debuglevel_t level,Generic text,Genericb textb) {
+@@ -3365,7 +3365,7 @@ void WiFiManager::DEBUG_WM(wm_debuglevel_t level,Generic text,Genericb textb) {
      uint32_t free = info.total_free_bytes;
      uint16_t max  = info.largest_free_block;
      uint8_t frag = 100 - (max * 100) / free;
