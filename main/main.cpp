@@ -7,6 +7,8 @@
 #include <freertos/task.h>
 #include <stdio.h>
 
+#define TICKS_PER_MS 1000
+
 #define BOTTOM_LEFT 26
 #define TOP_LEFT 25
 #define BOTTOM_RIGHT 4
